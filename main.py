@@ -19,7 +19,7 @@ def doctor() -> None:
     row(shutil.which(S.ffmpeg) is not None, "ffmpeg on PATH", "winget install Gyan.FFmpeg, then reopen PowerShell")
     row(shutil.which(S.ffprobe) is not None, "ffprobe on PATH", "comes with ffmpeg")
     row(bool(S.anthropic_key), "ANTHROPIC_API_KEY", "add it to .env")
-    row(bool(S.pexels_key or S.pixabay_key), "PEXELS_API_KEY or PIXABAY_API_KEY", "without one only plain generated cards are used (low quality)")
+    row(bool(S.pexels_key or S.pixabay_key), "PEXELS_API_KEY or PIXABAY_API_KEY (optional)", "without one, only Wikimedia public-domain images + generated cards are used")
     row((ROOT / "client_secret.json").exists(), "client_secret.json (YouTube)", "see README: YouTube API setup")
     row((ROOT / "token.json").exists(), "token.json (run: python main.py auth)", "run: python main.py auth")
     print(f"\nLanguage={S.language}  Voice={S.voice_name}  Geo={S.geo}  Privacy={S.privacy}  AutoPublish={S.auto_publish}")

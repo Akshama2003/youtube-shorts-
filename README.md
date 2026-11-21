@@ -37,7 +37,7 @@ notepad .env
 ## 2. Keys
 
 - **ANTHROPIC_API_KEY**: https://console.anthropic.com -> API Keys
-- **Stock footage key (kam se kam ek)**: `PIXABAY_API_KEY` (free account, https://pixabay.com/api/docs/) ya `PEXELS_API_KEY` (https://www.pexels.com/api/, kabhi kabhi key issuance paused hoti hai). Dono ho to dono use hote hain.
+- **Stock footage key (optional, quality behtar)**: `PIXABAY_API_KEY` (free account, https://pixabay.com/api/docs/) ya `PEXELS_API_KEY` (https://www.pexels.com/api/, kabhi kabhi key issuance paused hoti hai). Dono ho to dono use hote hain. Koi key na ho to Wikimedia Commons ki sirf public-domain/CC0 images use hoti hain (kam variety), aur wo bhi na mile to generated cards.
 - **YouTube** (ek baar):
   1. https://console.cloud.google.com -> naya project
   2. "YouTube Data API v3" enable karo

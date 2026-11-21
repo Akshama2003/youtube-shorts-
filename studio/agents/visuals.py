@@ -125,6 +125,51 @@ def _pixabay_photo(query: str, dest: Path, used: set) -> dict | None:
     return None
 
 
+WIKI_LICENSE = "Public domain / CC0 (Wikimedia Commons)"
+WIKI_UA = {"User-Agent": "yt-shorts-studio/1.0 (educational explainer videos)"}
+
+
+def _wikimedia_photo(query: str, dest: Path, used: set) -> dict | None:
+    """Keyless fallback. Only accepts files whose license metadata says Public domain or CC0."""
+    r = requests.get(
+        "https://commons.wikimedia.org/w/api.php",
+        headers=WIKI_UA,
+        params={
+            "action": "query", "format": "json", "generator": "search", "gsrnamespace": 6,
+            "gsrsearch": f"{query} filetype:bitmap", "gsrlimit": 30, "prop": "imageinfo",
+            "iiprop": "url|size|extmetadata", "iiurlwidth": 1600,
+        },
+        timeout=30,
+    )
+    r.raise_for_status()
+    pages = (r.json().get("query") or {}).get("pages", {})
+    for pg in sorted(pages.values(), key=lambda x: x.get("index", 0)):
+        info = (pg.get("imageinfo") or [{}])[0]
+        lic = ((info.get("extmetadata") or {}).get("LicenseShortName") or {}).get("value", "").lower()
+        if not (lic.startswith("public domain") or lic.startswith("cc0") or lic.startswith("pd")):
+            continue
+        if ("w", pg["pageid"]) in used or info.get("height", 0) < 900 or info.get("width", 0) < 900:
+            continue
+        url = info.get("thumburl") or info.get("url")
+        if not url:
+            continue
+        _download_ua(url, dest)
+        used.add(("w", pg["pageid"]))
+        return {
+            "path": str(dest), "kind": "image", "source": "wikimedia",
+            "url": info.get("descriptionurl", ""), "credit": "", "license": WIKI_LICENSE,
+        }
+    return None
+
+
+def _download_ua(url: str, dest: Path) -> None:
+    with requests.get(url, headers=WIKI_UA, stream=True, timeout=120) as r:
+        r.raise_for_status()
+        with open(dest, "wb") as f:
+            for chunk in r.iter_content(1 << 20):
+                f.write(chunk)
+
+
 def _font(size: int):
     for name in ("arialbd.ttf", "arial.ttf", "DejaVuSans-Bold.ttf"):
         try:
@@ -172,6 +217,7 @@ def gather(script: dict, out_dir: Path) -> list[dict]:
             providers.append(("Pexels", _pexels_video, _pexels_photo))
         if S.pixabay_key:
             providers.append(("Pixabay", _pixabay_video, _pixabay_photo))
+        providers.append(("Wikimedia", lambda *a: None, _wikimedia_photo))
         for pname, vfn, pfn in providers:
             for tq in (q, " ".join(q.split()[:2])):
                 try:
@@ -186,6 +232,6 @@ def gather(script: dict, out_dir: Path) -> list[dict]:
             asset = make_card(q, out_dir / f"scene_{i:02d}.jpg", i)
         asset["query"] = q
         assets.append(asset)
-    n_stock = sum(1 for a in assets if a["source"] in ("pexels", "pixabay"))
+    n_stock = sum(1 for a in assets if a["source"] != "generated")
     log("Visual Director", f"{n_stock} stock clips, {len(assets) - n_stock} generated cards")
     return assets

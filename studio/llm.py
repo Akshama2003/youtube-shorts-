@@ -14,7 +14,7 @@ def _c() -> Anthropic:
     if _client is None:
         if not S.anthropic_key:
             raise RuntimeError("ANTHROPIC_API_KEY is missing. Add it to your .env file.")
-        _client = Anthropic(api_key=S.anthropic_key)
+        _client = Anthropic(api_key=S.anthropic_key, max_retries=5)
     return _client
 
 
@@ -31,7 +31,9 @@ def ask(system: str, user: str, max_tokens: int = 4000) -> str:
             return "".join(b.text for b in r.content if getattr(b, "type", "") == "text")
         except Exception as e:  # network / rate limit
             last = e
-            time.sleep(2 * (attempt + 1))
+            wait = 20 * (attempt + 1)
+            print(f"[Claude API] {type(e).__name__}: {e} -> waiting {wait}s then retrying", flush=True)
+            time.sleep(wait)
     raise RuntimeError(f"Claude API failed: {last}")
 
 
