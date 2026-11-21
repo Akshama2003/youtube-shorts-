@@ -11,7 +11,7 @@ Ek poori AI "creator team" jo PowerShell se chalti hai: trending topic dhundhti 
 | 3 | Scriptwriter | Hook + scene-by-scene original script |
 | 4 | SEO & Packaging | Title, description, tags, hashtags, pinned comment idea |
 | 5 | Voice Artist | Free Microsoft neural voice (Hindi/English), word timings ke saath |
-| 6 | Visual Director | Pexels royalty-free footage; na mile to khud ke generated cards |
+| 6 | Visual Director | Pexels / Pixabay royalty-free footage; na mile to khud ke generated cards |
 | 7 | Video Editor | 1080x1920 vertical, word-highlight subtitles, loudness normalize |
 | 8 | QA & Compliance | Technical + copyright + YouTube policy + fact review. Fail = rewrite loop |
 | 9 | Publisher | YouTube Data API se upload (AI disclosure ke saath) |
@@ -37,7 +37,7 @@ notepad .env
 ## 2. Keys
 
 - **ANTHROPIC_API_KEY**: https://console.anthropic.com -> API Keys
-- **PEXELS_API_KEY** (free): https://www.pexels.com/api/
+- **Stock footage key (kam se kam ek)**: `PIXABAY_API_KEY` (free account, https://pixabay.com/api/docs/) ya `PEXELS_API_KEY` (https://www.pexels.com/api/, kabhi kabhi key issuance paused hoti hai). Dono ho to dono use hote hain.
 - **YouTube** (ek baar):
   1. https://console.cloud.google.com -> naya project
   2. "YouTube Data API v3" enable karo
@@ -94,7 +94,7 @@ gh repo create yt-shorts-studio --private --source . --push
 
 Covered:
 - Script AI se original likhi jati hai, kisi ka text/lyrics copy nahi.
-- Footage sirf Pexels (commercial use free) ya khud ke generated cards; har asset ka license `assets.json` me.
+- Footage sirf Pexels / Pixabay (commercial use free) ya khud ke generated cards; har asset ka license `assets.json` me.
 - Voice Microsoft ke free neural TTS se, koi real person ki cloned voice nahi.
 - QA har video pe copyright, misinformation, medical/financial advice, harmful content, misleading title check karta hai. Fail hone pe upload hota hi nahi.
 - Pichhle videos se similar script reject hoti hai (repetitive content se bachne ke liye).

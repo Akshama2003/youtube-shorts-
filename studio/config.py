@@ -34,6 +34,7 @@ class Settings:
     anthropic_key: str = _s("ANTHROPIC_API_KEY")
     model: str = _s("CLAUDE_MODEL", "claude-sonnet-5-5")
     pexels_key: str = _s("PEXELS_API_KEY")
+    pixabay_key: str = _s("PIXABAY_API_KEY")
     language: str = _s("LANGUAGE", "hi").lower()
     geo: str = _s("GEO", "IN").upper()
     niche: str = _s("NICHE")

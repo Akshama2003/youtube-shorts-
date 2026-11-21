@@ -56,8 +56,9 @@ def build_description(meta: dict, assets: list[dict]) -> str:
     parts = [meta["body"]]
     if S.disclose_ai:
         parts.append(AI_NOTE.get(S.language, AI_NOTE["en"]))
-    if any(a.get("source") == "pexels" for a in assets):
-        parts.append("Stock footage: Pexels (pexels.com).")
+    srcs = sorted({a["source"].capitalize() for a in assets if a.get("source") in ("pexels", "pixabay")})
+    if srcs:
+        parts.append("Stock footage: " + ", ".join(srcs) + ".")
     parts.append(" ".join(meta["hashtags"]))
     return "\n\n".join(p for p in parts if p)
 

@@ -10,6 +10,7 @@ from ..config import S
 from ..util import log
 
 PEXELS_LICENSE = "Pexels License (free for commercial use, attribution not required)"
+PIXABAY_LICENSE = "Pixabay Content License (free for commercial use, attribution not required)"
 PALETTES = [
     ((15, 32, 80), (120, 60, 200)),
     ((10, 70, 90), (20, 160, 140)),
@@ -81,6 +82,49 @@ def _pexels_photo(query: str, dest: Path, used: set) -> dict | None:
     return None
 
 
+def _pixabay_video(query: str, dest: Path, used: set) -> dict | None:
+    r = requests.get(
+        "https://pixabay.com/api/videos/",
+        params={"key": S.pixabay_key, "q": query, "per_page": 20, "safesearch": "true"},
+        timeout=30,
+    )
+    r.raise_for_status()
+    for v in r.json().get("hits", []):
+        if ("px", v["id"]) in used:
+            continue
+        vids = v.get("videos", {})
+        f = next((vids[k] for k in ("large", "medium", "small") if vids.get(k, {}).get("url")), None)
+        if not f:
+            continue
+        _download(f["url"], dest)
+        used.add(("px", v["id"]))
+        return {
+            "path": str(dest), "kind": "video", "source": "pixabay",
+            "url": v.get("pageURL", ""), "credit": v.get("user", ""), "license": PIXABAY_LICENSE,
+        }
+    return None
+
+
+def _pixabay_photo(query: str, dest: Path, used: set) -> dict | None:
+    r = requests.get(
+        "https://pixabay.com/api/",
+        params={"key": S.pixabay_key, "q": query, "image_type": "photo", "orientation": "vertical",
+                "per_page": 20, "safesearch": "true"},
+        timeout=30,
+    )
+    r.raise_for_status()
+    for p in r.json().get("hits", []):
+        if ("pxp", p["id"]) in used:
+            continue
+        _download(p.get("largeImageURL") or p["webformatURL"], dest)
+        used.add(("pxp", p["id"]))
+        return {
+            "path": str(dest), "kind": "image", "source": "pixabay",
+            "url": p.get("pageURL", ""), "credit": p.get("user", ""), "license": PIXABAY_LICENSE,
+        }
+    return None
+
+
 def _font(size: int):
     for name in ("arialbd.ttf", "arial.ttf", "DejaVuSans-Bold.ttf"):
         try:
@@ -123,21 +167,25 @@ def gather(script: dict, out_dir: Path) -> list[dict]:
     for i, sc in enumerate(script["scenes"]):
         q = sc.get("visual_query", "abstract background").strip()
         asset = None
+        providers = []
         if S.pexels_key:
-            tries = [q, " ".join(q.split()[:2])]
-            for tq in tries:
+            providers.append(("Pexels", _pexels_video, _pexels_photo))
+        if S.pixabay_key:
+            providers.append(("Pixabay", _pixabay_video, _pixabay_photo))
+        for pname, vfn, pfn in providers:
+            for tq in (q, " ".join(q.split()[:2])):
                 try:
-                    asset = _pexels_video(tq, out_dir / f"scene_{i:02d}.mp4", used)
-                    if not asset:
-                        asset = _pexels_photo(tq, out_dir / f"scene_{i:02d}.jpg", used)
+                    asset = vfn(tq, out_dir / f"scene_{i:02d}.mp4", used) or pfn(tq, out_dir / f"scene_{i:02d}.jpg", used)
                 except Exception as e:
-                    log("Visual Director", f"Pexels error for '{tq}': {e}")
+                    log("Visual Director", f"{pname} error for '{tq}': {e}")
                 if asset:
                     break
+            if asset:
+                break
         if not asset:
             asset = make_card(q, out_dir / f"scene_{i:02d}.jpg", i)
         asset["query"] = q
         assets.append(asset)
-    n_stock = sum(1 for a in assets if a["source"] == "pexels")
+    n_stock = sum(1 for a in assets if a["source"] in ("pexels", "pixabay"))
     log("Visual Director", f"{n_stock} stock clips, {len(assets) - n_stock} generated cards")
     return assets
