@@ -2,7 +2,7 @@ import json
 import re
 import time
 
-from anthropic import Anthropic
+from anthropic import Anthropic, AuthenticationError, BadRequestError, NotFoundError, PermissionDeniedError
 
 from .config import S
 
@@ -29,6 +29,11 @@ def ask(system: str, user: str, max_tokens: int = 4000) -> str:
                 messages=[{"role": "user", "content": user}],
             )
             return "".join(b.text for b in r.content if getattr(b, "type", "") == "text")
+        except (AuthenticationError, PermissionDeniedError, BadRequestError, NotFoundError) as e:
+            raise RuntimeError(
+                f"Claude API rejected the request ({type(e).__name__}). Check ANTHROPIC_API_KEY in .env "
+                f"(new key, no spaces/quotes), credits in the Anthropic console, and CLAUDE_MODEL. Details: {e}"
+            ) from e
         except Exception as e:  # network / rate limit
             last = e
             wait = 20 * (attempt + 1)
