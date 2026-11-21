@@ -36,7 +36,9 @@ notepad .env
 
 ## 2. Keys
 
-- **ANTHROPIC_API_KEY**: https://console.anthropic.com -> API Keys
+- **AI brain (ek chuno)**:
+  - FREE: `GEMINI_API_KEY` (card nahi lagta) -> https://aistudio.google.com/apikey . Free tier ki limits Google badalta rehta hai, https://aistudio.google.com/rate-limit par dekho. Free tier me Google aapke prompts product improve karne ke liye use kar sakta hai.
+  - PAID: `ANTHROPIC_API_KEY` (credits chahiye) -> https://console.anthropic.com , aur `.env` me `LLM_PROVIDER=anthropic`
 - **Stock footage key (optional, quality behtar)**: `PIXABAY_API_KEY` (free account, https://pixabay.com/api/docs/) ya `PEXELS_API_KEY` (https://www.pexels.com/api/, kabhi kabhi key issuance paused hoti hai). Dono ho to dono use hote hain. Koi key na ho to Wikimedia Commons ki sirf public-domain/CC0 images use hoti hain (kam variety), aur wo bhi na mile to generated cards.
 - **YouTube** (ek baar):
   1. https://console.cloud.google.com -> naya project

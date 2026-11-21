@@ -33,6 +33,9 @@ def _i(name: str, default: int) -> int:
 class Settings:
     anthropic_key: str = _s("ANTHROPIC_API_KEY")
     model: str = _s("CLAUDE_MODEL", "claude-sonnet-5-5")
+    gemini_key: str = _s("GEMINI_API_KEY")
+    gemini_model: str = _s("GEMINI_MODEL", "gemini-3.5-flash-lite")
+    llm_provider_setting: str = _s("LLM_PROVIDER").lower()
     pexels_key: str = _s("PEXELS_API_KEY")
     pixabay_key: str = _s("PIXABAY_API_KEY")
     language: str = _s("LANGUAGE", "hi").lower()
@@ -50,6 +53,12 @@ class Settings:
     sub_font: str = _s("SUB_FONT")
     ffmpeg: str = _s("FFMPEG", "ffmpeg")
     ffprobe: str = _s("FFPROBE", "ffprobe")
+
+    @property
+    def llm_provider(self) -> str:
+        if self.llm_provider_setting in ("gemini", "anthropic"):
+            return self.llm_provider_setting
+        return "gemini" if self.gemini_key and not self.anthropic_key else "anthropic"
 
     @property
     def voice_name(self) -> str:

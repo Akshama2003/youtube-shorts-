@@ -18,11 +18,14 @@ def doctor() -> None:
     row(sys.version_info >= (3, 10), "Python 3.10+", "install Python 3.10 or newer")
     row(shutil.which(S.ffmpeg) is not None, "ffmpeg on PATH", "winget install Gyan.FFmpeg, then reopen PowerShell")
     row(shutil.which(S.ffprobe) is not None, "ffprobe on PATH", "comes with ffmpeg")
-    row(bool(S.anthropic_key), "ANTHROPIC_API_KEY", "add it to .env")
+    if S.llm_provider == "gemini":
+        row(bool(S.gemini_key), f"GEMINI_API_KEY (model {S.gemini_model})", "free key: https://aistudio.google.com/apikey")
+    else:
+        row(bool(S.anthropic_key), "ANTHROPIC_API_KEY", "add it to .env")
     row(bool(S.pexels_key or S.pixabay_key), "PEXELS_API_KEY or PIXABAY_API_KEY (optional)", "without one, only Wikimedia public-domain images + generated cards are used")
     row((ROOT / "client_secret.json").exists(), "client_secret.json (YouTube)", "see README: YouTube API setup")
     row((ROOT / "token.json").exists(), "token.json (run: python main.py auth)", "run: python main.py auth")
-    print(f"\nLanguage={S.language}  Voice={S.voice_name}  Geo={S.geo}  Privacy={S.privacy}  AutoPublish={S.auto_publish}")
+    print(f"\nAI={S.llm_provider}  Language={S.language}  Voice={S.voice_name}  Geo={S.geo}  Privacy={S.privacy}  AutoPublish={S.auto_publish}")
 
 
 def main() -> None:
