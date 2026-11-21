@@ -1,12 +1,15 @@
 """Visual Director: sources royalty-free footage (Pexels) and logs the license of every asset.
 Falls back to self-generated gradient cards, which carry no third-party rights at all."""
+import hashlib
+import json
 import textwrap
+import time
 from pathlib import Path
 
 import requests
 from PIL import Image, ImageDraw, ImageFont
 
-from ..config import S
+from ..config import DATA, S
 from ..util import log
 
 PEXELS_LICENSE = "Pexels License (free for commercial use, attribution not required)"
@@ -82,14 +85,44 @@ def _pexels_photo(query: str, dest: Path, used: set) -> dict | None:
     return None
 
 
+_last_pix = 0.0
+
+
+def _pix_get(url: str, params: dict) -> dict:
+    """Pixabay GET with 24h disk cache, request spacing and wait-and-retry on 429."""
+    global _last_pix
+    ck = DATA / "cache" / (hashlib.md5((url + json.dumps(params, sort_keys=True)).encode()).hexdigest() + ".json")
+    try:
+        if ck.exists() and time.time() - ck.stat().st_mtime < 86400:
+            return json.loads(ck.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    for _ in range(3):
+        gap = 1.0 - (time.time() - _last_pix)
+        if gap > 0:
+            time.sleep(gap)
+        r = requests.get(url, params={**params, "key": S.pixabay_key}, timeout=30)
+        _last_pix = time.time()
+        if r.status_code == 429:
+            try:
+                reset = int(float(r.headers.get("X-RateLimit-Reset", "60")))
+            except ValueError:
+                reset = 60
+            wait = min(max(reset, 10), 70)
+            log("Visual Director", f"Pixabay rate limit hit - waiting {wait}s")
+            time.sleep(wait)
+            continue
+        r.raise_for_status()
+        data = r.json()
+        ck.parent.mkdir(parents=True, exist_ok=True)
+        ck.write_text(json.dumps(data), encoding="utf-8")
+        return data
+    raise RuntimeError("Pixabay rate limit still exceeded; try again in a few minutes")
+
+
 def _pixabay_video(query: str, dest: Path, used: set) -> dict | None:
-    r = requests.get(
-        "https://pixabay.com/api/videos/",
-        params={"key": S.pixabay_key, "q": query, "per_page": 20, "safesearch": "true"},
-        timeout=30,
-    )
-    r.raise_for_status()
-    for v in r.json().get("hits", []):
+    data = _pix_get("https://pixabay.com/api/videos/", {"q": query, "per_page": 20, "safesearch": "true"})
+    for v in data.get("hits", []):
         if ("px", v["id"]) in used:
             continue
         vids = v.get("videos", {})
@@ -106,14 +139,11 @@ def _pixabay_video(query: str, dest: Path, used: set) -> dict | None:
 
 
 def _pixabay_photo(query: str, dest: Path, used: set) -> dict | None:
-    r = requests.get(
+    data = _pix_get(
         "https://pixabay.com/api/",
-        params={"key": S.pixabay_key, "q": query, "image_type": "photo", "orientation": "vertical",
-                "per_page": 20, "safesearch": "true"},
-        timeout=30,
+        {"q": query, "image_type": "photo", "orientation": "vertical", "per_page": 20, "safesearch": "true"},
     )
-    r.raise_for_status()
-    for p in r.json().get("hits", []):
+    for p in data.get("hits", []):
         if ("pxp", p["id"]) in used:
             continue
         _download(p.get("largeImageURL") or p["webformatURL"], dest)
